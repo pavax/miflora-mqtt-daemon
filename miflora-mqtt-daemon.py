@@ -154,13 +154,13 @@ print_line('Configuration accepted', console=False, sd_notify=True)
 # MQTT connection
 if reporting_mode in ['mqtt-json', 'mqtt-homie', 'mqtt-smarthome', 'homeassistant-mqtt', 'thingsboard-json']:
     print_line('Connecting to MQTT broker ...')
-    mqtt_client = mqtt.Client()
+    mqtt_client = mqtt.Client(client_id="miflora")
     mqtt_client.on_connect = on_connect
     mqtt_client.on_publish = on_publish
     if reporting_mode == 'mqtt-json':
         mqtt_client.will_set('{}/$announce'.format(base_topic), payload='{}', retain=True)
     elif reporting_mode == 'mqtt-homie':
-        mqtt_client.will_set('{}/{}/$online'.format(base_topic, device_id), payload='false', retain=True)
+        mqtt_client.will_set('{}/{}/$state'.format(base_topic, device_id), payload='disconnected', retain=True)
     elif reporting_mode == 'mqtt-smarthome':
         mqtt_client.will_set('{}/connected'.format(base_topic), payload='0', retain=True)
 
@@ -252,10 +252,11 @@ if reporting_mode == 'mqtt-json':
     sleep(0.5) # some slack for the publish roundtrip and callback function
     print()
 elif reporting_mode == 'mqtt-homie':
-    print_line('Announcing Mi Flora devices to MQTT broker for auto-discovery ...')
-    mqtt_client.publish('{}/{}/$homie'.format(base_topic, device_id), '2.1.0-alpha', 1, True)
-    mqtt_client.publish('{}/{}/$online'.format(base_topic, device_id), 'true', 1, True)
+    print_line('Announcing Mi Flora devices as homie to MQTT broker for auto-discovery ...')
+    mqtt_client.publish('{}/{}/$homie'.format(base_topic, device_id), '3.0', 1, True)
     mqtt_client.publish('{}/{}/$name'.format(base_topic, device_id), device_id, 1, True)
+    mqtt_client.publish('{}/{}/$state'.format(base_topic, device_id), 'ready', 1, True)
+    mqtt_client.publish('{}/{}/$fw/name'.format(base_topic, device_id), 'miflora-firmware', 1, True)
     mqtt_client.publish('{}/{}/$fw/version'.format(base_topic, device_id), flora['firmware'], 1, True)
 
     nodes_list = ','.join([flora_name for [flora_name, flora] in flores.items()])
@@ -266,26 +267,41 @@ elif reporting_mode == 'mqtt-homie':
         mqtt_client.publish('{}/$name'.format(topic_path), flora['name_pretty'], 1, True)
         mqtt_client.publish('{}/$type'.format(topic_path), 'miflora', 1, True)
         mqtt_client.publish('{}/$properties'.format(topic_path), 'battery,conductivity,light,moisture,temperature', 1, True)
+
+        mqtt_client.publish('{}/battery/$name'.format(topic_path), 'battery', 1, True)
         mqtt_client.publish('{}/battery/$settable'.format(topic_path), 'false', 1, True)
-        mqtt_client.publish('{}/battery/$unit'.format(topic_path), 'percent', 1, True)
-        mqtt_client.publish('{}/battery/$datatype'.format(topic_path), 'int', 1, True)
-        mqtt_client.publish('{}/battery/$range'.format(topic_path), '0:100', 1, True)
+        mqtt_client.publish('{}/battery/$unit'.format(topic_path), '%', 1, True)
+        mqtt_client.publish('{}/battery/$datatype'.format(topic_path), 'integer', 1, True)
+        mqtt_client.publish('{}/battery/$format'.format(topic_path), '0:100', 1, True)
+        mqtt_client.publish('{}/battery/$retained'.format(topic_path), 'true', 1, True)
+
+        mqtt_client.publish('{}/conductivity/$name'.format(topic_path), 'conductivity', 1, True)
         mqtt_client.publish('{}/conductivity/$settable'.format(topic_path), 'false', 1, True)
         mqtt_client.publish('{}/conductivity/$unit'.format(topic_path), 'µS/cm', 1, True)
-        mqtt_client.publish('{}/conductivity/$datatype'.format(topic_path), 'int', 1, True)
-        mqtt_client.publish('{}/conductivity/$range'.format(topic_path), '0:*', 1, True)
+        mqtt_client.publish('{}/conductivity/$datatype'.format(topic_path), 'integer', 1, True)
+        mqtt_client.publish('{}/conductivity/$format'.format(topic_path), '0:*', 1, True)
+        mqtt_client.publish('{}/conductivity/$retained'.format(topic_path), 'true', 1, True)
+
+        mqtt_client.publish('{}/light/$name'.format(topic_path), 'light', 1, True)
         mqtt_client.publish('{}/light/$settable'.format(topic_path), 'false', 1, True)
         mqtt_client.publish('{}/light/$unit'.format(topic_path), 'lux', 1, True)
-        mqtt_client.publish('{}/light/$datatype'.format(topic_path), 'int', 1, True)
-        mqtt_client.publish('{}/light/$range'.format(topic_path), '0:50000', 1, True)
+        mqtt_client.publish('{}/light/$datatype'.format(topic_path), 'integer', 1, True)
+        mqtt_client.publish('{}/light/$format'.format(topic_path), '0:50000', 1, True)
+        mqtt_client.publish('{}/light/$retained'.format(topic_path), 'true', 1, True)
+
+        mqtt_client.publish('{}/moisture/$name'.format(topic_path), 'moisture', 1, True)
         mqtt_client.publish('{}/moisture/$settable'.format(topic_path), 'false', 1, True)
-        mqtt_client.publish('{}/moisture/$unit'.format(topic_path), 'percent', 1, True)
-        mqtt_client.publish('{}/moisture/$datatype'.format(topic_path), 'int', 1, True)
-        mqtt_client.publish('{}/moisture/$range'.format(topic_path), '0:100', 1, True)
+        mqtt_client.publish('{}/moisture/$unit'.format(topic_path), '%', 1, True)
+        mqtt_client.publish('{}/moisture/$datatype'.format(topic_path), 'integer', 1, True)
+        mqtt_client.publish('{}/moisture/$format'.format(topic_path), '0:100', 1, True)
+        mqtt_client.publish('{}/moisture/$retained'.format(topic_path), 'true', 1, True)
+
+        mqtt_client.publish('{}/temperature/$name'.format(topic_path), 'temperature', 1, True)
         mqtt_client.publish('{}/temperature/$settable'.format(topic_path), 'false', 1, True)
         mqtt_client.publish('{}/temperature/$unit'.format(topic_path), '°C', 1, True)
         mqtt_client.publish('{}/temperature/$datatype'.format(topic_path), 'float', 1, True)
-        mqtt_client.publish('{}/temperature/$range'.format(topic_path), '*', 1, True)
+        mqtt_client.publish('{}/temperature/$format'.format(topic_path), '*', 1, True)
+        mqtt_client.publish('{}/temperature/$retained'.format(topic_path), 'true', 1, True)
     sleep(0.5) # some slack for the publish roundtrip and callback function
     print()
 elif reporting_mode == 'homeassistant-mqtt':
@@ -359,7 +375,7 @@ while True:
         elif reporting_mode == 'mqtt-homie':
             print_line('Publishing data to MQTT base topic "{}/{}/{}"'.format(base_topic, device_id, flora_name))
             for [param, value] in data.items():
-                mqtt_client.publish('{}/{}/{}/{}'.format(base_topic, device_id, flora_name, param), value, 1, False)
+                mqtt_client.publish('{}/{}/{}/{}'.format(base_topic, device_id, flora_name, param), value, 1, True)
             sleep(0.5) # some slack for the publish roundtrip and callback function
         elif reporting_mode == 'mqtt-smarthome':
             for [param, value] in data.items():
