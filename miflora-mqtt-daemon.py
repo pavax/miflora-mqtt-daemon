@@ -154,7 +154,7 @@ print_line('Configuration accepted', console=False, sd_notify=True)
 # MQTT connection
 if reporting_mode in ['mqtt-json', 'mqtt-homie', 'mqtt-smarthome', 'homeassistant-mqtt', 'thingsboard-json']:
     print_line('Connecting to MQTT broker ...')
-    mqtt_client = mqtt.Client(client_id="miflora")
+    mqtt_client = mqtt.Client()
     mqtt_client.on_connect = on_connect
     mqtt_client.on_publish = on_publish
     if reporting_mode == 'mqtt-json':
@@ -252,7 +252,7 @@ if reporting_mode == 'mqtt-json':
     sleep(0.5) # some slack for the publish roundtrip and callback function
     print()
 elif reporting_mode == 'mqtt-homie':
-    print_line('Announcing Mi Flora devices as homie to MQTT broker for auto-discovery ...')
+    print_line('Announcing Mi Flora devices to MQTT broker for auto-discovery ...')
     mqtt_client.publish('{}/{}/$homie'.format(base_topic, device_id), '3.0', 1, True)
     mqtt_client.publish('{}/{}/$name'.format(base_topic, device_id), device_id, 1, True)
     mqtt_client.publish('{}/{}/$state'.format(base_topic, device_id), 'ready', 1, True)
